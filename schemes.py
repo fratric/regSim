@@ -5,11 +5,10 @@ import random
 
 class random_behavior(transactionLaboratory):
     
-    def __init__(self, N = 100) -> None:
+    def __init__(self, accounts) -> None:
         super().__init__()
+        self.accounts = accounts
         self.behavior_name = 'random'
-        self.N = N # Number of entities
-        self.compliant_accounts = ['C' + str(i) for i in range(N)]
 
     def random_amount(self, min_amount = 10, max_amount = 500):
         return round(random.uniform(min_amount, max_amount), 2)
@@ -23,7 +22,7 @@ class random_behavior(transactionLaboratory):
         transactions = []
         transaction_time = self.start
         for _ in range(k):
-            from_node, to_node = self.random_accounts(accounts=self.compliant_accounts)
+            from_node, to_node = self.random_accounts(accounts=self.accounts)
             amount = self.random_amount()
             transaction_time = self.random_time_step(transaction_time)
             transactions.append((from_node, to_node, amount, transaction_time))
@@ -45,14 +44,13 @@ class layering(transactionLaboratory):
     
 class round_tripping(transactionLaboratory):
 
-    def __init__(self, source_accounts = 10, intermediate_accounts = 25, target_accounts = 4, capital = 10**6) -> None:
+    def __init__(self, accounts) -> None:
         super().__init__()
         self.behavior_name = 'round_trip'
-        self.capital = capital
         
-        self.source_accounts = ['S' + str(i) for i in range(source_accounts)]
-        self.intermediate_accounts = ['I' + str(i) for i in range(intermediate_accounts)]
-        self.target_accounts = ['T' + str(i) for i in range(target_accounts)]
+        self.source_accounts = accounts['source_accounts']
+        self.intermediate_accounts = accounts['intermediate_accounts']
+        self.target_accounts = accounts['target_accounts']
         self.noncompliant_accounts = self.source_accounts + self.intermediate_accounts + self.target_accounts
     
     def random_amount(self, min_amount = 100, max_amount = 200000):
@@ -82,10 +80,10 @@ class round_tripping(transactionLaboratory):
         return transactions
 
     
-    def generate(self, max_intermediate_transactions = 12):
+    def generate(self, max_intermediate_transactions = 12, capital = 10**6):
         transactions = []
         
-        remaining_capital = self.capital
+        remaining_capital = capital
         while remaining_capital > 0:
             amount = self.random_amount(max_amount = remaining_capital)
             if remaining_capital - amount > 0:

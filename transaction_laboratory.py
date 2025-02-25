@@ -55,8 +55,8 @@ class transactionLaboratory(ABC):
         #pos = nx.circular_layout(G) # Layout for better visualization
         edges = G.edges(data=True)
         # Draw nodes and edges
-        nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=500, edge_color='gray', arrows=True)
+        nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=100, edge_color='gray', arrows=True, font_size = 4)
         if edgeLables:
-            nx.draw_networkx_edge_labels(G, pos, edge_labels={(u, v): f"${d['amount']}" for u, v, d in edges}, font_size=8)
+            nx.draw_networkx_edge_labels(G, pos, edge_labels={(u, v): f"${d['amount']}" for u, v, d in edges}, font_size=4)
         plt.title(title)
         plt.show()
