@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 from datetime import datetime, timedelta
-
 from abc import ABC, abstractmethod
 
 class transactionLaboratory(ABC):
@@ -41,9 +40,9 @@ class transactionLaboratory(ABC):
         
         return from_node, to_node
 
-    def toTable(self, data):
+    def toTable(self, data, columns = ['source', 'target', 'amount', 'time']):
         if isinstance(data, list):
-            return pd.DataFrame(data, columns =['source', 'target', 'amount', 'time'])
+            return pd.DataFrame(data, columns = columns)
 
     def plotTransactionGraph(self, dataframe, edgeLables = False, title = 'Transaction graph'):
         if isinstance(dataframe, pd.DataFrame):
@@ -60,3 +59,6 @@ class transactionLaboratory(ABC):
             nx.draw_networkx_edge_labels(G, pos, edge_labels={(u, v): f"${d['amount']}" for u, v, d in edges}, font_size=4)
         plt.title(title)
         plt.show()
+
+    def running_zscore(self, series, window_size = 12):
+        return (series - series.rolling(window=window_size, min_periods=1).mean()) / series.rolling(window=window_size, min_periods=1).std()
