@@ -1,4 +1,4 @@
-from simulator import Simulator
+from session4.simulator import Simulator
 from datetime import datetime, timedelta
 import random
 from itertools import cycle

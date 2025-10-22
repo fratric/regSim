@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spontaneous Recovery in Dynamical Networks</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            color: #111;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+        
+        .canvas-container {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .controls {
+            background: #dbeafe;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            background: #dcfce7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .settings {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .info {
+            background: #fef3c7;
+            border-radius: 8px;
+            padding: 20px;
+            font-size: 12px;
+        }
+        
+        h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn-secondary {
+            background: #4b5563;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #374151;
+        }
+        
+        .btn-tertiary {
+            background: #e5e7eb;
+            color: #111;
+        }
+        
+        .btn-tertiary:hover {
+            background: #d1d5db;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .stat-label {
+            color: #666;
+        }
+        
+        .stat-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        
+        .param-group {
+            margin-bottom: 15px;
+        }
+        
+        .param-label {
+            display: block;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 3px;
+        }
+        
+        .info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info li {
+            margin-bottom: 6px;
+            color: #78716c;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spontaneous Recovery in Dynamical Networks</h1>
+        <p class="subtitle">Based on Majdandzic et al., Nature Physics (2014)</p>
+        
+        <div class="grid">
+            <div>
+                <div class="canvas-container">
+                    <canvas id="networkCanvas" width="600" height="600"></canvas>
+                </div>
+                
+                <div class="canvas-container">
+                    <h3>Activity Ratio Over Time</h3>
+                    <canvas id="historyCanvas" width="700" height="200"></canvas>
+                </div>
+            </div>
+            
+            <div>
+                <div class="controls">
+                    <h3>Controls</h3>
+                    <div class="button-group">
+                        <button id="playBtn" class="btn-primary">
+                            <span>▶</span> Start
+                        </button>
+                        <button id="resetBtn" class="btn-secondary">
+                            <span>↻</span> Reset
+                        </button>
+                    </div>
+                    <button id="settingsBtn" class="btn-tertiary">
+                        <span>⚙</span> <span id="settingsText">Show Settings</span>
+                    </button>
+                </div>
+                
+                <div class="stats">
+                    <h3>Current State</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Time:</span>
+                        <span class="stat-value" id="timeValue">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Activity Ratio:</span>
+                        <span class="stat-value" id="activityValue">0.820</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">p* = 1-e<sup>-pτ</sup>:</span>
+                        <span class="stat-value" id="pstarValue">0.281</span>
+                    </div>
+                </div>
+                
+                <div id="settingsPanel" class="settings hidden">
+                    <h3>Parameters</h3>
+                    
+                    <div class="param-group">
+                        <label class="param-label">N (nodes): <span id="nValue">100</span></label>
+                        <input type="range" id="nInput" min="20" max="200" value="100">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label class="param-label">k (degree): <span id="kValue">10</span></label>
+                        <input type="range" id="kInput" min="4" max="20" step="2" value="10">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label class="param-label">m (threshold): <span id="mValue">4</span></label>
+                        <input type="range" id="mInput" min="0" max="20" value="4">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label class="param-label">p (failure rate): <span id="pValue">0.00329</span></label>
+                        <input type="range" id="pInput" min="0.0001" max="0.01" step="0.00001" value="0.0032860">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label class="param-label">r (external failure): <span id="rValue">0.80</span></label>
+                        <input type="range" id="rInput" min="0" max="1" step="0.01" value="0.80">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label class="param-label">τ (internal recovery): <span id="tauValue">100</span></label>
+                        <input type="range" id="tauInput" min="1" max="200" value="100">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label class="param-label">τ' (external recovery): <span id="tauprimeValue">1</span></label>
+                        <input type="range" id="tauprimeInput" min="1" max="10" value="1">
+                    </div>
+                    
+                    <button id="applyBtn" class="btn-primary" style="width: 100%;">
+                        Apply Changes
+                    </button>
+                </div>
+                
+                <div class="info">
+                    <h3>Model Description</h3>
+                    <ul>
+                        <li>• <span style="color: #22c55e; font-weight: bold;">Green</span>: Active nodes</li>
+                        <li>• <span style="color: #ef4444; font-weight: bold;">Red</span>: Inactive nodes</li>
+                        <li>• Internal failure: rate p, recovery time τ</li>
+                        <li>• External failure: rate r when ≤m active neighbors</li>
+                        <li>• System exhibits phase-flipping in hysteresis region</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class NetworkSimulation {
+            constructor() {
+                this.params = {
+                    N: 100,
+                    k: 10,
+                    m: 4,
+                    p: 0.0032860,
+                    r: 0.80,
+                    tau: 100,
+                    tauprime: 1
+                };
+                
+                this.isRunning = false;
+                this.timeStep = 0;
+                this.history = [];
+                this.animationId = null;
+                
+                this.state = {
+                    nodes: [],
+                    edges: [],
+                    adjList: [],
+                    active: [],
+                    failType: [],
+                    nonactiveTimeInternal: [],
+                    nonactiveTimeExternal: [],
+                    positions: []
+                };
+                
+                this.setupEventListeners();
+                this.init();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('playBtn').addEventListener('click', () => this.togglePlay());
+                document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+                document.getElementById('settingsBtn').addEventListener('click', () => this.toggleSettings());
+                document.getElementById('applyBtn').addEventListener('click', () => this.applySettings());
+                
+                const inputs = ['n', 'k', 'm', 'p', 'r', 'tau', 'tauprime'];
+                inputs.forEach(id => {
+                    const input = document.getElementById(id + 'Input');
+                    const display = document.getElementById(id + 'Value');
+                    input.addEventListener('input', (e) => {
+                        const val = parseFloat(e.target.value);
+                        display.textContent = id === 'p' ? val.toFixed(5) : (id === 'r' ? val.toFixed(2) : val);
+                        if (id === 'k') {
+                            document.getElementById('mInput').max = val;
+                        }
+                    });
+                });
+            }
+            
+            togglePlay() {
+                this.isRunning = !this.isRunning;
+                const btn = document.getElementById('playBtn');
+                if (this.isRunning) {
+                    btn.innerHTML = '<span>⏸</span> Pause';
+                    this.run();
+                } else {
+                    btn.innerHTML = '<span>▶</span> Start';
+                    if (this.animationId) {
+                        cancelAnimationFrame(this.animationId);
+                    }
+                }
+            }
+            
+            toggleSettings() {
+                const panel = document.getElementById('settingsPanel');
+                const text = document.getElementById('settingsText');
+                panel.classList.toggle('hidden');
+                text.textContent = panel.classList.contains('hidden') ? 'Show Settings' : 'Hide Settings';
+            }
+            
+            applySettings() {
+                this.params.N = parseInt(document.getElementById('nInput').value);
+                this.params.k = parseInt(document.getElementById('kInput').value);
+                this.params.m = parseInt(document.getElementById('mInput').value);
+                this.params.p = parseFloat(document.getElementById('pInput').value);
+                this.params.r = parseFloat(document.getElementById('rInput').value);
+                this.params.tau = parseInt(document.getElementById('tauInput').value);
+                this.params.tauprime = parseInt(document.getElementById('tauprimeInput').value);
+                this.reset();
+            }
+            
+            reset() {
+                this.isRunning = false;
+                document.getElementById('playBtn').innerHTML = '<span>▶</span> Start';
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                this.init();
+            }
+            
+            generateKRegularGraph(N, k) {
+                if (N * k % 2 !== 0) k = k - 1;
+                
+                const edges = [];
+                const adjList = Array.from({ length: N }, () => new Set());
+                
+                let stubs = [];
+                for (let i = 0; i < N; i++) {
+                    for (let j = 0; j < k; j++) {
+                        stubs.push(i);
+                    }
+                }
+                
+                // Shuffle
+                for (let i = stubs.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [stubs[i], stubs[j]] = [stubs[j], stubs[i]];
+                }
+                
+                // Create edges
+                for (let i = 0; i < stubs.length; i += 2) {
+                    const u = stubs[i];
+                    const v = stubs[i + 1];
+                    if (u !== v && !adjList[u].has(v)) {
+                        edges.push([u, v]);
+                        adjList[u].add(v);
+                        adjList[v].add(u);
+                    }
+                }
+                
+                return { edges, adjList };
+            }
+            
+            layoutNodes(N) {
+                const positions = [];
+                const radius = 280;
+                const centerX = 300;
+                const centerY = 300;
+                
+                for (let i = 0; i < N; i++) {
+                    const angle = (2 * Math.PI * i) / N;
+                    positions.push({
+                        x: centerX + radius * Math.cos(angle),
+                        y: centerY + radius * Math.sin(angle)
+                    });
+                }
+                return positions;
+            }
+            
+            init() {
+                const { N, k } = this.params;
+                const { edges, adjList } = this.generateKRegularGraph(N, k);
+                const positions = this.layoutNodes(N);
+                
+                const active = new Array(N).fill(0).map(() => Math.random() > 0.18 ? 1 : 0);
+                const failType = new Array(N).fill('None');
+                const nonactiveTimeInternal = new Array(N).fill(0);
+                const nonactiveTimeExternal = new Array(N).fill(0);
+                
+                active.forEach((a, i) => {
+                    if (a === 0) {
+                        failType[i] = 'Internal';
+                        nonactiveTimeInternal[i] = 1;
+                    }
+                });
+                
+                this.state = {
+                    nodes: Array.from({ length: N }, (_, i) => i),
+                    edges,
+                    adjList,
+                    active,
+                    failType,
+                    nonactiveTimeInternal,
+                    nonactiveTimeExternal,
+                    positions
+                };
+                
+                this.timeStep = 0;
+                this.history = [active.filter(a => a === 1).length / N];
+                
+                this.updateStats();
+                this.draw();
+            }
+            
+            recovery(j, currentT) {
+                const { tau, tauprime } = this.params;
+                const { failType, nonactiveTimeInternal, nonactiveTimeExternal } = this.state;
+                
+                if (failType[j] === 'External') {
+                    if (currentT - nonactiveTimeExternal[j] >= tauprime) {
+                        nonactiveTimeExternal[j] = 0;
+                        failType[j] = 'None';
+                        return 1;
+                    }
+                    return 0;
+                } else if (failType[j] === 'Internal') {
+                    if (currentT - nonactiveTimeInternal[j] >= tau) {
+                        nonactiveTimeInternal[j] = 0;
+                        failType[j] = 'None';
+                        return 1;
+                    }
+                    return 0;
+                }
+                return 1;
+            }
+            
+            failIndependent(j, currentT) {
+                const { p } = this.params;
+                const { active, failType, nonactiveTimeInternal } = this.state;
+                
+                if (active[j] === 1) {
+                    if (Math.random() < p) {
+                        failType[j] = 'Internal';
+                        nonactiveTimeInternal[j] = currentT;
+                        return 0;
+                    }
+                    return 1;
+                }
+                return 0;
+            }
+            
+            failThreshold(j, currentT) {
+                const { m, r } = this.params;
+                const { active, adjList, failType, nonactiveTimeExternal } = this.state;
+                
+                if (active[j] === 1) {
+                    const neighbors = Array.from(adjList[j]);
+                    const activeNeighbors = neighbors.filter(n => active[n] === 1).length;
+                    
+                    if (activeNeighbors <= m) {
+                        if (Math.random() < r) {
+                            failType[j] = 'External';
+                            nonactiveTimeExternal[j] = currentT;
+                            return 0;
+                        }
+                    }
+                    return 1;
+                }
+                return 0;
+            }
+            
+            step() {
+                const { nodes } = this.state;
+                const currentT = this.timeStep + 1;
+                
+                for (let j of nodes) {
+                    this.state.active[j] = this.recovery(j, currentT);
+                    this.state.active[j] = this.failIndependent(j, currentT);
+                    this.state.active[j] = this.failThreshold(j, currentT);
+                }
+                
+                this.timeStep = currentT;
+                const ratio = this.state.active.filter(a => a === 1).length / nodes.length;
+                this.history.push(ratio);
+                if (this.history.length > 500) this.history.shift();
+                
+                this.updateStats();
+            }
+            
+            updateStats() {
+                const ratio = this.state.active.filter(a => a === 1).length / this.state.nodes.length;
+                document.getElementById('timeValue').textContent = this.timeStep;
+                document.getElementById('activityValue').textContent = ratio.toFixed(3);
+                document.getElementById('pstarValue').textContent = this.pstar().toFixed(3);
+            }
+            
+            pstar() {
+                return 1 - Math.exp(-this.params.p * this.params.tau);
+            }
+            
+            draw() {
+                this.drawNetwork();
+                this.drawHistory();
+            }
+            
+            drawNetwork() {
+                const canvas = document.getElementById('networkCanvas');
+                const ctx = canvas.getContext('2d');
+                const { edges, positions, active } = this.state;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw edges
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 1;
+                edges.forEach(([u, v]) => {
+                    ctx.beginPath();
+                    ctx.moveTo(positions[u].x, positions[u].y);
+                    ctx.lineTo(positions[v].x, positions[v].y);
+                    ctx.stroke();
+                });
+                
+                // Draw nodes
+                positions.forEach((pos, i) => {
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = active[i] === 1 ? '#22c55e' : '#ef4444';
+                    ctx.fill();
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+            }
+            
+            drawHistory() {
+                const canvas = document.getElementById('historyCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw axes
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(50, 10);
+                ctx.lineTo(50, 180);
+                ctx.lineTo(canvas.width - 10, 180);
+                ctx.stroke();
+                
+                // Grid
+                ctx.strokeStyle = '#e5e5e5';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i <= 4; i++) {
+                    const y = 10 + (170 * i) / 4;
+                    ctx.beginPath();
+                    ctx.moveTo(50, y);
+                    ctx.lineTo(canvas.width - 10, y);
+                    ctx.stroke();
+                }
+                
+                // Labels
+                ctx.fillStyle = '#666';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'right';
+                for (let i = 0; i <= 4; i++) {
+                    const y = 10 + (170 * i) / 4;
+                    ctx.fillText((1 - i * 0.25).toFixed(2), 45, y + 4);
+                }
+                
+                // Data
+                if (this.history.length < 2) return;
+                
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                const xScale = (canvas.width - 60) / Math.min(this.history.length, 500);
+                
+                this.history.forEach((val, i) => {
+                    const x = 50 + i * xScale;
+                    const y = 180 - val * 170;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            
+            run() {
+                if (!this.isRunning) return;
+                
+                this.step();
+                this.draw();
+                
+                this.animationId = requestAnimationFrame(() => this.run());
+            }
+        }
+        
+        const sim = new NetworkSimulation();
+    </script>
+</body>
+</html>
